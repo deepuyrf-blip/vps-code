@@ -1,0 +1,69 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>body{margin:0;background:#F2EDE4}canvas{display:block}</style></head>
+<body><canvas id="c" width="1600" height="1180"></canvas>
+<script type="module">
+import * as T from './toon.js';
+
+const c = document.getElementById('c');
+const g = c.getContext('2d');
+g.fillStyle = '#F2EDE4';
+g.fillRect(0, 0, c.width, c.height);
+
+// one cell: soft shadow + the character at full 600x1000 design size
+const cell = (x, y, w, h, label, draw) => {
+  g.save();
+  g.strokeStyle = '#c9c0b0';
+  g.lineWidth = 2;
+  g.strokeRect(x, y, w, h);
+  g.fillStyle = '#F7F3EA';
+  g.fillRect(x + 1, y + 1, w - 2, h - 2);
+
+  const sub = document.createElement('canvas');
+  sub.width = 600;
+  sub.height = 1000;
+  const p = new T.Pen(sub.getContext('2d'));
+  // NOTE: do NOT set p.ol = 0 — that is the ink outline width. Zero kills the
+  // thick black outline that makes this style read.
+  draw(p);
+
+  // soft ellipse shadow under the soles (matches the reference sheets)
+  const sx = x + w / 2, sy = y + h - 46;
+  const grd = g.createRadialGradient(sx, sy, 2, sx, sy, w * 0.30);
+  grd.addColorStop(0, 'rgba(60,48,36,0.22)');
+  grd.addColorStop(1, 'rgba(60,48,36,0)');
+  g.fillStyle = grd;
+  g.beginPath();
+  g.ellipse(sx, sy, w * 0.30, h * 0.035, 0, 0, Math.PI * 2);
+  g.fill();
+
+  g.drawImage(sub, x + 4, y + 4, w - 8, h - 44);
+  g.fillStyle = '#2b2620';
+  g.font = 'bold 20px sans-serif';
+  g.textAlign = 'center';
+  g.fillText(label, x + w / 2, y + h - 12);
+  g.restore();
+};
+
+const W = 310, H = 560;
+const cast = [
+  ['Liang', (p) => T.romanFront(p, 'liang', { expr: 'neutral', R: 'hang', L: 'hang', seed: 3 })],
+  ['Liang (fan)', (p) => T.romanFront(p, 'liang', { expr: 'grin', R: 'point', L: 'hang', seed: 3 })],
+  ['Liang (shock)', (p) => T.romanFront(p, 'liang', { expr: 'shock', R: 'up', L: 'hang', seed: 3 })],
+  ['Drummer', (p) => T.romanFront(p, 'drummer', { expr: 'shock', R: 'hang', L: 'hang', seed: 7 })],
+  ['Drummer (happy)', (p) => T.romanFront(p, 'drummer', { expr: 'grin', R: 'lift', L: 'hang', seed: 7 })],
+  ['General', (p) => T.romanFront(p, 'general', { expr: 'stern', R: 'point', L: 'hip', seed: 5 })],
+  ['Archer', (p) => T.romanFront(p, 'archer', { expr: 'stern', R: 'reach', L: 'cross', seed: 9 })],
+  ['Archer officer', (p) => T.romanFront(p, 'archerOfficer', { expr: 'stern', R: 'up', L: 'hip', seed: 11 })],
+  ['Straw dummy', (p) => T.strawFront(p, { seed: 2 })],
+  ['Straw (no helmet)', (p) => T.strawFront(p, { seed: 4, helmet: false })],
+  ['War drum', (p) => T.drumFront(p, { seed: 1 })],
+  ['Feather fan', (p) => T.fanFront(p)],
+];
+
+cast.forEach(([label, draw], i) => {
+  const col = i % 6, row = Math.floor(i / 6);
+  cell(20 + col * (W + 8), 20 + row * (H + 24), W, H, label, draw);
+});
+
+window.ready = true;
+</script></body></html>
