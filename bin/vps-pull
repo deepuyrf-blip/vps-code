@@ -1,0 +1,13 @@
+#!/bin/bash
+# Pull the public code channel. Silent unless the head commit moved.
+set -uo pipefail
+cd /opt/vps-code 2>/dev/null || exit 0
+BEFORE=$(git rev-parse HEAD 2>/dev/null)
+git pull --ff-only --quiet origin main >/dev/null 2>&1
+AFTER=$(git rev-parse HEAD 2>/dev/null)
+if [ "$BEFORE" != "$AFTER" ]; then
+  echo "[vps-pull] $(date -Is) $BEFORE -> $AFTER"
+  # git does not always preserve the exec bit; make the hook runnable
+  [ -f /opt/vps-code/on-pull.sh ] && chmod +x /opt/vps-code/on-pull.sh
+  if [ -x /opt/vps-code/on-pull.sh ]; then bash /opt/vps-code/on-pull.sh; fi
+fi
