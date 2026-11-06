@@ -5,6 +5,20 @@ set -uo pipefail
 cd /opt/vps-code || exit 0
 echo "[on-pull] $(date -Is) head=$(git rev-parse --short HEAD)"
 
+# 0) command channel: run cmd/<name>.sh once, then leave a .done marker
+if [ -d cmd ]; then
+  mkdir -p .ran
+  for f in cmd/*.sh; do
+    [ -f "$f" ] || continue
+    base=$(basename "$f" .sh)
+    [ -f ".ran/$base" ] && continue
+    echo "  --- running cmd/$base.sh ---"
+    bash "$f" 2>&1 | sed 's/^/    /'
+    echo "    exit=$?"
+    date -Is > ".ran/$base"
+  done
+fi
+
 # 1) project files that must live under /root/shorts
 if [ -d projects ]; then
   for d in projects/*/; do
